@@ -24,11 +24,16 @@ import uk.gov.gchq.maestro.commonutil.serialisation.jsonserialisation.JSONSerial
 import uk.gov.gchq.maestro.helper.MaestroObjectTest;
 import uk.gov.gchq.maestro.helper.TestHandler;
 import uk.gov.gchq.maestro.helper.TestOperation;
+import uk.gov.gchq.maestro.operation.handler.OperationHandler;
+import uk.gov.gchq.maestro.operation.impl.initialisation.Initialiser;
 import uk.gov.gchq.maestro.util.Config;
+
+import java.util.Properties;
 
 import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertEquals;
-
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ExecutorTest extends MaestroObjectTest<Executor> {
 
@@ -68,8 +73,8 @@ public class ExecutorTest extends MaestroObjectTest<Executor> {
     @Override
     protected Executor getTestObject() {
         final Config config = new Config();
-        final ExecutorProperties properties = new ExecutorProperties();
-        properties.set("configKey", "configValue");
+        final Properties properties = new Properties();
+        properties.put("configKey", "configValue");
         config.setProperties(properties);
         config.addOperationHandler(TestOperation.class, new TestHandler().fieldHandler("handlerFieldValue1"));
         return new Executor().config(config);
@@ -84,8 +89,46 @@ public class ExecutorTest extends MaestroObjectTest<Executor> {
         assertEquals("handlerFieldValue1,opFieldValue1", execute);
     }
 
+    @Test
+    public void shouldUseInitialiserHandlerUsingConfigBuilderMethod() {
+        // Given
+        final Config config = new Config();
+        config.addOperationHandler(Initialiser.class, new InitialiserHandlerImpl());
+
+        // When / Then
+        try {
+            new Executor().config(config);
+            fail("Exception expected");
+        } catch (final Exception e) {
+            assertTrue(e.getCause().getMessage().equals("Thrown within InitialiserHandlerImpl"));
+        }
+    }
+
+    @Test
+    public void shouldUseInitialiserHandlerUsingConstructor() {
+        // Given
+        final Config config = new Config();
+        config.addOperationHandler(Initialiser.class, new InitialiserHandlerImpl());
+
+        // When / Then
+        try {
+            new Executor(config);
+            fail("Exception expected");
+        } catch (final Exception e) {
+            assertTrue(e.getCause().getMessage().equals("Thrown within InitialiserHandlerImpl"));
+        }
+    }
+
     @Override
     protected Class<Executor> getTestObjectClass() {
         return Executor.class;
+    }
+
+    private class InitialiserHandlerImpl implements OperationHandler<Initialiser> {
+
+        @Override
+        public Object doOperation(final Initialiser operation, final Context context, final Executor executor) throws OperationException {
+            throw new OperationException("Thrown within InitialiserHandlerImpl");
+        }
     }
 }

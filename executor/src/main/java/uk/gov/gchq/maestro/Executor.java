@@ -30,22 +30,26 @@ import org.slf4j.LoggerFactory;
 import uk.gov.gchq.maestro.commonutil.CloseableUtil;
 import uk.gov.gchq.maestro.commonutil.ExecutorService;
 import uk.gov.gchq.maestro.commonutil.cache.CacheServiceLoader;
+import uk.gov.gchq.maestro.commonutil.exception.ExecutorException;
 import uk.gov.gchq.maestro.commonutil.exception.OperationException;
 import uk.gov.gchq.maestro.commonutil.exception.SerialisationException;
 import uk.gov.gchq.maestro.commonutil.serialisation.jsonserialisation.JSONSerialiser;
+import uk.gov.gchq.maestro.hook.Hook;
 import uk.gov.gchq.maestro.jobtracker.JobDetail;
 import uk.gov.gchq.maestro.operation.DefaultOperation;
 import uk.gov.gchq.maestro.operation.Operation;
 import uk.gov.gchq.maestro.operation.handler.OperationHandler;
+import uk.gov.gchq.maestro.operation.impl.initialisation.Initialiser;
 import uk.gov.gchq.maestro.operation.impl.job.Job;
 import uk.gov.gchq.maestro.operation.validator.OperationValidation;
 import uk.gov.gchq.maestro.user.User;
 import uk.gov.gchq.maestro.util.Config;
+import uk.gov.gchq.maestro.util.ExecutorPropertiesUtil;
 import uk.gov.gchq.maestro.util.Request;
 import uk.gov.gchq.maestro.util.Result;
-import uk.gov.gchq.maestro.util.hook.Hook;
 
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static java.util.Objects.nonNull;
@@ -64,20 +68,18 @@ public class Executor {
     }
 
     public Executor(final Config config) {
-        this.config = config;
-        startCacheServiceLoader(config.getProperties());
-        addExecutorService(config.getProperties());
+        config(config);
     }
 
-    protected void startCacheServiceLoader(final ExecutorProperties properties) {
+    protected void startCacheServiceLoader(final Properties properties) {
         if (null != properties) {
-            CacheServiceLoader.initialise(properties.getProperties());
+            CacheServiceLoader.initialise(properties);
         }
     }
 
-    private void addExecutorService(final ExecutorProperties properties) {
+    private void addExecutorService(final Properties properties) {
         if (null != properties) {
-            ExecutorService.initialise(properties.getJobExecutorThreadCount());
+            ExecutorService.initialise(ExecutorPropertiesUtil.getJobExecutorThreadCount(properties));
         }
     }
 
@@ -216,6 +218,15 @@ public class Executor {
     public Executor config(final Config config) {
         if (nonNull(config)) {
             this.config = config;
+            startCacheServiceLoader(config.getProperties());
+            addExecutorService(config.getProperties());
+            try {
+                runInitOperation();
+            } catch (final Exception e) {
+                throw new ExecutorException(e);
+            }
+        } else {
+            throw new ExecutorException(new IllegalArgumentException("Config is null"));
         }
         return this;
     }
@@ -252,8 +263,7 @@ public class Executor {
                         LOGGER.warn("Error in operationHook " + operationHook.getClass().getSimpleName() + ": " + operationHookE.getMessage(), operationHookE);
                     }
                 }
-            } catch (final Throwable t) {
-                throw t;
+                throw e;
             }
         } else if (operation instanceof DefaultOperation) {
             result = doUnhandledOperation(operation);
@@ -267,6 +277,27 @@ public class Executor {
         }
 
         return result;
+    }
+
+    private void runInitOperation() throws OperationException {
+        final Operation operation = new Initialiser();
+        final OperationHandler handler = getHandler(operation.getClass());
+        final Context context = new Context();
+
+        if (null != handler) {
+            if (handler instanceof OperationValidation) {
+                ((OperationValidation) handler).prepareOperation(operation,
+                        context, this);
+            }
+            try {
+                handler.doOperation(operation, context, this);
+            } catch (final Exception e) {
+                LOGGER.error("InitialiseOp failed");
+                throw e;
+            }
+        } else {
+            LOGGER.debug("No Initialiser Operation Handler supplied");
+        }
     }
 
     private Object doUnhandledOperation(final Operation operation) {
