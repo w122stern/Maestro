@@ -19,6 +19,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import uk.gov.gchq.maestro.commonutil.ToStringBuilder;
+import uk.gov.gchq.maestro.hook.ExecutionTrackingInfo;
 import uk.gov.gchq.maestro.operation.Operation;
 import uk.gov.gchq.maestro.operation.OperationChain;
 import uk.gov.gchq.maestro.operation.export.Exporter;
@@ -36,6 +37,7 @@ public class Context {
     private final Map<String, Object> config;
     private Operation originalOperation;
     private Map<String, Object> variables;
+    private ExecutionTrackingInfo executionTrackingInfo;
 
     /**
      * Map of exporter simple class name to exporter
@@ -208,6 +210,14 @@ public class Context {
 
     public void setOriginalOperation(final Operation originalOperation) {
         this.originalOperation = originalOperation;
+    }
+
+    public ExecutionTrackingInfo getExecutionTrackingInfo() {
+        return executionTrackingInfo;
+    }
+
+    public void setExecutionTrackingInfo(final ExecutionTrackingInfo executionTrackingInfo) {
+        this.executionTrackingInfo = executionTrackingInfo;
     }
 
     @Override
