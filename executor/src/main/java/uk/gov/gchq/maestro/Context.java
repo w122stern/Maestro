@@ -19,7 +19,6 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import uk.gov.gchq.maestro.commonutil.ToStringBuilder;
-import uk.gov.gchq.maestro.hook.ExecutionTrackingInfo;
 import uk.gov.gchq.maestro.operation.Operation;
 import uk.gov.gchq.maestro.operation.OperationChain;
 import uk.gov.gchq.maestro.operation.export.Exporter;
@@ -35,9 +34,9 @@ public class Context {
     private final User user;
     private final String jobId;
     private final Map<String, Object> config;
+    private String parentJobId;
     private Operation originalOperation;
     private Map<String, Object> variables;
-    private ExecutionTrackingInfo executionTrackingInfo;
 
     /**
      * Map of exporter simple class name to exporter
@@ -64,6 +63,7 @@ public class Context {
         if (null != context.originalOperation) {
             originalOperation = context.originalOperation.shallowClone();
         }
+        parentJobId = context.jobId;
     }
 
     /**
@@ -114,6 +114,7 @@ public class Context {
             this.jobId = jobId;
         }
     }
+
 
     public User getUser() {
         return user;
@@ -212,12 +213,12 @@ public class Context {
         this.originalOperation = originalOperation;
     }
 
-    public ExecutionTrackingInfo getExecutionTrackingInfo() {
-        return executionTrackingInfo;
+    public String getParentJobId() {
+        return parentJobId;
     }
 
-    public void setExecutionTrackingInfo(final ExecutionTrackingInfo executionTrackingInfo) {
-        this.executionTrackingInfo = executionTrackingInfo;
+    public void setParentJobId(String parentJobId) {
+        this.parentJobId = parentJobId;
     }
 
     @Override

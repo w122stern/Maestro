@@ -23,36 +23,69 @@ import java.util.Date;
 public class ExecutionTrackingInfo {
 
     private String operationType;
-    private String jobId;
-    private String executorId;
-    private String userId;
     private Date timeBegin;
     private Date timeEnd;
+    private String jobId;
+    private String parentJobId;
+    private String executorId;
+    private String userId;
 //    private O monitoringEndpoint #TODO
+
+    public String getParentJobId() {
+        return parentJobId;
+    }
 
     public ExecutionTrackingInfo(Request request){
         this.operationType = request.getOperation().getClass().getSimpleName();
         this.jobId = request.getContext().getJobId();
+        this.parentJobId = request.getContext().getParentJobId();
         this.executorId = request.getConfig().getId();
         this.userId = request.getContext().getUser().getUserId();
         this.timeBegin = new Date();
     }
 
-    public void setTimeEnd(final Date timeEnd) {
-        this.timeEnd = timeEnd;
+    public String getJobId() {
+        return jobId;
     }
+
+    public void setJobId(final String jobId) {
+        this.jobId = jobId;
+    }
+
+    public <T> ExecutionTrackingInfo(T result, Request request){
+        this.operationType = request.getOperation().getClass().getSimpleName();
+        this.jobId = request.getContext().getJobId();
+        this.parentJobId = request.getContext().getParentJobId();
+        this.executorId = request.getConfig().getId();
+        this.userId = request.getContext().getUser().getUserId();
+        this.timeEnd = new Date();
+    }
+
+    public Date getTimeEnd() {
+        return timeEnd;
+    }
+
+    public Date getTimeBegin() {
+        return timeBegin;
+    }
+
 
     @Override
     public String toString() {
-        String strTimeBegin = ( this.timeBegin != null) ? new SimpleDateFormat("MM/dd HH:mm:ss").format(timeBegin) : "";
-        String strTimeEnd = (this.timeEnd != null) ? new SimpleDateFormat("MM/dd HH:mm:ss").format(timeEnd) : "";
+        String strTimeBegin = ( this.timeBegin != null) ? ", timeBegin=" + new SimpleDateFormat("MM/dd HH:mm:ss").format(timeBegin) : "";
+        String strTimeEnd = (this.timeEnd != null) ? ", timeEnd=" + new SimpleDateFormat("MM/dd HH:mm:ss").format(timeEnd) : "";
         return "ExecutionTrackingInfo{" +
                 "operationType='" + operationType +'\'' +
+                strTimeBegin +
+                strTimeEnd +
                 ", jobId='" + jobId + '\'' +
+                ", parentJobId='" + parentJobId + '\'' +
                 ", executorId='" + executorId + '\'' +
                 ", userId='" + userId + '\'' +
-                ", timeBegin=" + strTimeBegin +
-                ", timeEnd=" + strTimeEnd +
                 '}';
+    }
+
+    public String getOperationType() {
+        return operationType;
     }
 }

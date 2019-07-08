@@ -252,11 +252,11 @@ public class Executor {
                     operationHook.preExecute(opAsRequest);
                 }
                 result = handler.doOperation(operation, context, this);
-                for (final Hook operationHook : getConfig().getRequestHooks()) {
+                for (final Hook operationHook : getConfig().getOperationHooks()) {
                     result = operationHook.postExecute(result, opAsRequest);
                 }
             } catch (final Exception e) {
-                for (final Hook operationHook : getConfig().getRequestHooks()) {
+                for (final Hook operationHook : getConfig().getOperationHooks()) {
                     try {
                         result = operationHook.onFailure(result, opAsRequest, e);
                     } catch (final Exception operationHookE) {

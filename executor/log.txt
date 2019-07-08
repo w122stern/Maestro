@@ -1,0 +1,1 @@
+ExecutionTrackingInfo{operationType='OperationChain', timeBegin=07/08 17:02:20, jobId='ae25a937-39b1-4be3-abc1-734e7be21e15', parentJobId='null', executorId='exampleExecutorId1', userId='UNKNOWN'}
